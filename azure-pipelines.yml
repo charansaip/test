@@ -1,0 +1,41 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+
+pool:
+  vmImage: ubuntu-latest
+
+parameters:
+  - name: targetLocation
+    displayName: pathname ?
+    type: string 
+
+stages:
+  - stage: Bashscript
+    jobs:
+      - job: 
+        continueOnError: false     
+        steps:
+        - checkout: self
+
+        - task: TerraformInstaller@2
+          inputs:
+            terraformVersion: 'latest'     
+
+        - script: |
+            echo ${{parameters.targetLocation}}
+            cd '$(Build.SourcesDirectory)/${{parameters.targetLocation}}'
+            terraform init
+            chmod +x .terraform/providers/registry.terraform.io/microsoft/azuredevops/0.9.1/linux_amd64/terraform-provider-azuredevops_v0.9.1
+            terraform plan -out main.tfplan
+
+        - task: TerraformCLI@2
+          inputs:
+            command: 'apply'
+            workingDirectory: '$(Build.SourcesDirectory)/${{parameters.targetLocation}}'
+            allowTelemetryCollection: true
+           
